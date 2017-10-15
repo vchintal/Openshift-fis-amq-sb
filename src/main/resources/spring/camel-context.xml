@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd        http://camel.apache.org/schema/spring       http://camel.apache.org/schema/spring/camel-spring.xsd">
+    <!-- Camel Routes -->
+    <camelContext id="camel" xmlns="http://camel.apache.org/schema/spring">
+        <!--
+          A route to generate a random order every 5th second.
+
+          When this route is started, it will automatically send xml messages to the JMS queue incomingOrders on the
+          ActiveMQ broker.
+
+          The <log/> elements are used to add human-friendly business logging statements. They make it easier to see what the
+          route is doing.
+
+          The amq component ensures to use the broker in the kubernetes cluster.
+          <to id="route-timer" uri="timer:order?repeatCount=10"/>
+        -->
+        <route id="generate-order-route" streamCache="true">
+            <from id="route-timer" uri="timer:order?period=3000"/>
+            <setBody id="_setBody1">
+                <simple>"Hello from timer at ${header.firedTime}"</simple>
+            </setBody>
+            <log id="route-log-order" message="message '${body}' is ready to be sent."/>
+            <to id="route-to-incoming-orders" uri="amq:incomingOrders"/>
+        </route>
+        <!--
+          This route consumes messages from the JMS queue incomingOrders on the ActiveMQ broker within the ESB.
+
+          The <choice/> element contains the content based router. The two <when/> clauses use XPath to define the criteria
+          for entering that part of the route. When the country in the XML message is set to UK or US, the message will follow
+          the specific rules defined for that country. The <otherwise/> element ensures that any message that does not meet the
+          requirements for either of the <when/> elements will follow another route.
+        -->
+        <route id="jms-cbr-route" streamCache="true">
+            <from id="route-from-incoming-orders" uri="amq:incomingOrders"/>
+            <log id="route-final-log" message="Done processing ${body}"/>
+        </route>
+    </camelContext>
+</beans>

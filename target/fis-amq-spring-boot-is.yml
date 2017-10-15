@@ -1,0 +1,15 @@
+---
+apiVersion: "v1"
+kind: "List"
+items:
+- apiVersion: "v1"
+  kind: "ImageStream"
+  metadata:
+    name: "fis-amq-spring-boot"
+  spec:
+    tags:
+    - from:
+        kind: "ImageStreamImage"
+        name: "fis-amq-spring-boot@sha256:6a84d7d03211c34403ff2abff1965d5bff9cab22c753c8467dd45eb6534e2cbd"
+        namespace: "amq"
+      name: "latest"
